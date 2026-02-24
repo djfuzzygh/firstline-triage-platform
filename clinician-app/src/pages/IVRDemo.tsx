@@ -45,6 +45,11 @@ export const IVRDemo: React.FC = () => {
     {
       id: 'welcome',
       prompt: '📞 Welcome to FirstLine Clinical Triage. Press 1 for New Triage Assessment.',
+      options: [
+        { key: '1', label: 'New Triage Assessment' },
+        { key: '2', label: 'Follow-up Results' },
+        { key: '0', label: 'Speak with Clinician' },
+      ],
     },
     {
       id: 'age_selection',
