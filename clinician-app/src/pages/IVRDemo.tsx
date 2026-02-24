@@ -135,16 +135,16 @@ export const IVRDemo: React.FC = () => {
 
     // Map answers to clinical data
     const ageMap: { [key: string]: string } = {
-      '1': 'Infant',
-      '2': 'Child',
-      '3': 'Teen',
-      '4': 'Adult',
-      '5': 'Elderly',
+      '1': 'Infant (0-2)',
+      '2': 'Child (3-12)',
+      '3': 'Teen (13-17)',
+      '4': 'Adult (18-65)',
+      '5': 'Elderly (65+)',
     };
 
     const symptomMap: { [key: string]: string } = {
-      '1': 'Fever',
-      '2': 'Cough',
+      '1': 'Fever (>38.5°C)',
+      '2': 'Cough (persistent)',
       '3': 'Chest Pain',
       '4': 'Abdominal Pain',
       '5': 'Difficulty Breathing',
@@ -157,20 +157,53 @@ export const IVRDemo: React.FC = () => {
       '4': '> 1 week',
     };
 
+    const riskTier = simulateRiskAssessment(answers);
+
+    // Generate risk-appropriate recommendations
+    const getRecommendations = (tier: string, symptom: string): string[] => {
+      if (tier === 'RED') {
+        return [
+          '🚨 EMERGENCY: Seek immediate medical care',
+          'Call ambulance or go to nearest emergency room immediately',
+          'Do not delay - this requires urgent evaluation',
+          'Monitor airway, breathing, and circulation',
+        ];
+      } else if (tier === 'ORANGE') {
+        return [
+          '⚠️ URGENT: Seek medical care within 2-4 hours',
+          'Visit nearest clinic or hospital urgently',
+          'Keep patient comfortable and hydrated',
+          'Monitor vital signs and symptoms closely',
+          'Return immediately if symptoms worsen',
+        ];
+      } else if (tier === 'YELLOW') {
+        return [
+          '📋 IMPORTANT: Schedule clinic visit within 24 hours',
+          'Rest and stay hydrated',
+          'Take over-the-counter medications if appropriate',
+          'Monitor symptoms - return if they worsen',
+        ];
+      } else {
+        return [
+          '✅ Self-care recommended',
+          'Rest and maintain hydration',
+          'Follow-up with clinician if symptoms persist beyond 7 days',
+          'Seek care if symptoms worsen or new symptoms develop',
+        ];
+      }
+    };
+
     // Simulate AI assessment
     const result = {
       ageGroup: ageMap[answers[0]] || 'Unknown',
       symptoms: [symptomMap[answers[1]] || 'Unknown'],
       duration: durationMap[answers[2]] || 'Unknown',
-      riskTier: simulateRiskAssessment(answers),
-      recommendations: [
-        'See a clinician within 2 hours for evaluation',
-        'Keep patient hydrated and rested',
-        'Monitor vital signs closely',
-        'Seek immediate care if symptoms worsen',
-      ],
+      dangerSigns: answers[4] !== '5' ? 'Yes' : 'None detected',
+      riskTier,
+      recommendations: getRecommendations(riskTier, symptomMap[answers[1]]),
       disclaimer:
-        'This is not a diagnosis. Please consult with a qualified healthcare provider for medical advice.',
+        '⚠️ This assessment is AI-assisted clinical triage guidance, not a diagnosis. Final clinical decisions should be made by qualified healthcare providers.',
+      smsMessage: `FirstLine Triage Result: ${riskTier} risk detected. ${ageMap[answers[0]]} with ${symptomMap[answers[1]].toLowerCase()} for ${durationMap[answers[2]].toLowerCase()}. Recommended action: ${riskTier === 'RED' ? 'Seek emergency care immediately' : riskTier === 'ORANGE' ? 'Urgent clinic visit within 4 hours' : riskTier === 'YELLOW' ? 'Clinic visit within 24 hours' : 'Self-care, monitor symptoms'}.`,
     };
 
     setTriageResult(result);
@@ -179,20 +212,36 @@ export const IVRDemo: React.FC = () => {
   };
 
   const simulateRiskAssessment = (answers: string[]): string => {
-    // Simple logic: higher danger signs = higher risk
-    const dangerSignAnswer = answers[4];
+    const ageGroup = answers[0];
+    const symptom = answers[1];
+    const duration = answers[2];
+    const dangerSign = answers[4];
 
-    if (dangerSignAnswer === '1' || dangerSignAnswer === '2' || dangerSignAnswer === '3' || dangerSignAnswer === '4') {
+    // RED: Danger signs present
+    if (dangerSign === '1' || dangerSign === '2' || dangerSign === '3' || dangerSign === '4') {
       return 'RED';
     }
 
-    // Fever + long duration = ORANGE
-    if (answers[1] === '1' && (answers[2] === '3' || answers[2] === '4')) {
-      return 'ORANGE';
-    }
+    // ORANGE: Serious conditions with moderate duration
+    // Difficulty breathing (high priority)
+    if (symptom === '5') return 'ORANGE';
+    // Chest pain (high priority)
+    if (symptom === '3') return 'ORANGE';
+    // Fever + prolonged duration (3+ days)
+    if (symptom === '1' && (duration === '3' || duration === '4')) return 'ORANGE';
+    // Abdominal pain + prolonged duration
+    if (symptom === '4' && (duration === '3' || duration === '4')) return 'ORANGE';
 
-    // Default to YELLOW or GREEN
-    return Math.random() > 0.5 ? 'YELLOW' : 'GREEN';
+    // YELLOW: Moderate conditions
+    // Fever with short duration
+    if (symptom === '1' && (duration === '1' || duration === '2')) return 'YELLOW';
+    // Cough with any duration
+    if (symptom === '2') return 'YELLOW';
+    // Infants/elderly with any symptom (higher risk due to age)
+    if ((ageGroup === '1' || ageGroup === '5') && (symptom === '1' || symptom === '2')) return 'YELLOW';
+
+    // GREEN: Mild conditions, short duration
+    return 'GREEN';
   };
 
   const endCall = () => {
@@ -335,7 +384,10 @@ export const IVRDemo: React.FC = () => {
               {/* Patient Summary */}
               <Box sx={{ mb: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
                 <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                  Assessment Summary
+                  Clinical Assessment
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Age Group:</strong> {triageResult.ageGroup}
                 </Typography>
                 <Typography variant="body2">
                   <strong>Symptoms:</strong> {triageResult.symptoms.join(', ')}
@@ -343,23 +395,45 @@ export const IVRDemo: React.FC = () => {
                 <Typography variant="body2">
                   <strong>Duration:</strong> {triageResult.duration}
                 </Typography>
+                <Typography variant="body2">
+                  <strong>Danger Signs:</strong> {triageResult.dangerSigns}
+                </Typography>
               </Box>
 
-              {/* Recommendations */}
-              <Box sx={{ mb: 2, p: 2, bgcolor: '#e8f5e9', borderRadius: 1 }}>
+              {/* Recommendations - Color coded by risk */}
+              <Box
+                sx={{
+                  mb: 2,
+                  p: 2,
+                  borderRadius: 1,
+                  bgcolor:
+                    triageResult.riskTier === 'RED'
+                      ? '#ffebee'
+                      : triageResult.riskTier === 'ORANGE'
+                        ? '#fff3e0'
+                        : triageResult.riskTier === 'YELLOW'
+                          ? '#fffde7'
+                          : '#e8f5e9',
+                }}
+              >
                 <Typography variant="subtitle2" color="textSecondary" gutterBottom>
                   Recommended Actions
                 </Typography>
                 {triageResult.recommendations.map((rec: string, idx: number) => (
-                  <Typography key={idx} variant="body2" sx={{ mb: 1, pl: 1 }}>
-                    • {rec}
+                  <Typography key={idx} variant="body2" sx={{ mb: 0.5, pl: 1 }}>
+                    {rec}
                   </Typography>
                 ))}
               </Box>
 
-              {/* SMS Notification */}
+              {/* SMS Notification - Show actual SMS content */}
               <Alert severity="info" sx={{ mb: 2 }}>
-                📱 SMS with results sent to caller's phone
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                  📱 SMS Notification Sent:
+                </Typography>
+                <Typography variant="caption" sx={{ fontFamily: 'monospace', display: 'block', p: 1, bgcolor: '#fff' }}>
+                  {triageResult.smsMessage}
+                </Typography>
               </Alert>
 
               {/* Disclaimer */}
