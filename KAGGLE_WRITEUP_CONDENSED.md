@@ -220,6 +220,16 @@ Most transformative feature: **Patients call a toll-free number and receive real
 - Edge computing ensures resilience and data sovereignty
 - Healthcare accessibility is no longer limited by geography or internet
 
+### 7. Real-Time Text-to-Speech (Natural Voice Output)
+- System speaks back to patients in natural language—critical for low-literacy regions
+- Welcome messages, question prompts, and results all read aloud
+- Automatic voice output + manual repeat/stop/toggle controls
+- Multi-language support ready (English, Swahili, French, Portuguese, Hausa)
+- Zero cost for demo (Web Speech API), negligible production cost (~$0.000016/character)
+- Eliminates literacy barrier: 258 million non-literate adults in Africa can now use triage
+
+**Impact:** Voice isn't a feature—it's the core innovation making FirstLine accessible to non-literate populations. While competitors assume literacy and smartphones, FirstLine assumes only a phone and a voice.
+
 ---
 
 ## Live Deployment & Demo
