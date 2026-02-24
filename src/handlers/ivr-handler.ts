@@ -71,7 +71,7 @@ export const handler = asDualHandler(expressHandler);
 /**
  * Step 1: Welcome message and main menu
  */
-async function handleWelcome(state: IVRState, res: Response): Promise<void> {
+async function handleWelcome(_state: IVRState, res: Response): Promise<void> {
   const twiml = `
     <Response>
       <Say voice="alice">Welcome to FirstLine Clinical Triage.</Say>
@@ -190,7 +190,7 @@ async function handleDangerSignsCheck(selection: string, state: IVRState, res: R
 async function handleProcessing(state: IVRState, res: Response): Promise<void> {
   try {
     // Create encounter with collected data
-    const encounter = await firestoreService.createEncounter({
+    await firestoreService.createEncounter({
       encounterId: state.encounterId,
       channel: 'voice_ivr',
       phoneNumber: state.phoneNumber,

@@ -6,9 +6,7 @@
 export interface VoiceConfig {
   twilioAccountSid?: string;
   twilioAuthToken?: string;
-  twilio
-
-PhoneNumber?: string;
+  twilioPhoneNumber?: string;
   africasTalkingApiKey?: string;
   africasTalkingUsername?: string;
   africasTalkingPhoneNumber?: string;
@@ -209,7 +207,7 @@ export class VoiceService {
     const lowerText = transcript.toLowerCase();
 
     // Simple keyword matching
-    const symptomKeywords: { [key: string]: string } = {
+    const symptomKeywords: { [key: string]: string[] } = {
       fever: ['fever', 'hot', 'temperature', 'warm'],
       cough: ['cough', 'coughing', 'coughed'],
       'chest pain': ['chest pain', 'chest', 'pain in chest'],
@@ -221,7 +219,7 @@ export class VoiceService {
     };
 
     for (const [symptom, keywords] of Object.entries(symptomKeywords)) {
-      if (keywords.some((kw) => lowerText.includes(kw))) {
+      if (keywords.some((kw: string) => lowerText.includes(kw))) {
         symptoms.push(symptom);
       }
     }

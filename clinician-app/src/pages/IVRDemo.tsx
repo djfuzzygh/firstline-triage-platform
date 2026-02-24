@@ -19,7 +19,7 @@ import {
 import {
   Phone,
   Mic,
-  PhoneOff,
+  PhoneDisabled,
   CheckCircle,
   Error as ErrorIcon,
   VolumeUp,
@@ -382,7 +382,7 @@ export const IVRDemo: React.FC = () => {
             {(callActive || triageResult) && (
               <>
                 {callActive && !triageResult && (
-                  <Button variant="outlined" color="error" fullWidth startIcon={<PhoneOff />} onClick={endCall}>
+                  <Button variant="outlined" color="error" fullWidth startIcon={<PhoneDisabled />} onClick={endCall}>
                     End Call
                   </Button>
                 )}
