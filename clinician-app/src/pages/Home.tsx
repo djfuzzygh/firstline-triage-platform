@@ -24,6 +24,20 @@ export default function Home() {
 
   return (
     <Box>
+      <Box
+        sx={{
+          mb: 3,
+          p: 2,
+          backgroundColor: '#e3f2fd',
+          borderLeft: '4px solid #1976d2',
+          borderRadius: 1,
+        }}
+      >
+        <Typography variant="body2" sx={{ color: '#1976d2', fontWeight: 600 }}>
+          ⭐ For Kaggle Judges: Try the "Voice Triage Demo" card below to see the toll-free voice system in action!
+        </Typography>
+      </Box>
+
       <Typography variant="h4" gutterBottom>
         Welcome, {user?.name}
       </Typography>

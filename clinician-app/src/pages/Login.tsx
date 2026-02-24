@@ -9,7 +9,7 @@ import {
   Box,
   Alert,
 } from '@mui/material';
-import { LocalHospital } from '@mui/icons-material';
+import { LocalHospital, Info } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
@@ -82,6 +82,19 @@ export default function Login() {
               {error}
             </Alert>
           )}
+
+          <Alert
+            severity="info"
+            icon={<Info />}
+            sx={{ mb: 3 }}
+          >
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              <strong>Demo Access:</strong> Use any email and password to sign up or sign in.
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block' }}>
+              Example: test@example.com / password123
+            </Typography>
+          </Alert>
 
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
             <TextField
