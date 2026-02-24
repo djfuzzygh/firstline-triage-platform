@@ -23,6 +23,8 @@ import {
   CheckCircle,
   Error as ErrorIcon,
   VolumeUp,
+  VolumeOff,
+  Stop,
 } from '@mui/icons-material';
 
 interface IVRStep {
@@ -39,6 +41,35 @@ export const IVRDemo: React.FC = () => {
   const [processing, setProcessing] = useState(false);
   const [triageResult, setTriageResult] = useState<any>(null);
   const [callDuration, setCallDuration] = useState(0);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Text-to-Speech function
+  const speakText = (text: string) => {
+    if (!voiceEnabled) return;
+
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+
+    // Clean up the text (remove emoji and special formatting)
+    const cleanText = text.replace(/[📞🤒⏱️⚠️🔴🟡🟢]/g, '').trim();
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
 
   // IVR Script
   const ivrScript: IVRStep[] = [
@@ -113,6 +144,11 @@ export const IVRDemo: React.FC = () => {
     setSelectedAnswers([]);
     setTriageResult(null);
     setCallDuration(0);
+
+    // Speak welcome message after a brief delay
+    setTimeout(() => {
+      speakText(ivrScript[0].prompt);
+    }, 500);
   };
 
   const selectOption = async (key: string) => {
@@ -124,6 +160,10 @@ export const IVRDemo: React.FC = () => {
 
     if (currentStep < ivrScript.length - 1) {
       setCurrentStep(currentStep + 1);
+      // Speak the next prompt
+      setTimeout(() => {
+        speakText(ivrScript[currentStep + 1].prompt);
+      }, 300);
     } else {
       // Perform triage
       await performTriage(answers);
@@ -209,6 +249,12 @@ export const IVRDemo: React.FC = () => {
     setTriageResult(result);
     setProcessing(false);
     setCallDuration(Math.round(callDuration));
+
+    // Speak the risk tier result after a brief delay
+    setTimeout(() => {
+      const resultSpeech = `Triage assessment complete. Risk tier: ${result.riskTier}. Patient is ${result.ageGroup} with ${result.symptoms.join(' and ')} for ${result.duration}. Recommended action: ${result.recommendations[0]}`;
+      speakText(resultSpeech);
+    }, 500);
   };
 
   const simulateRiskAssessment = (answers: string[]): string => {
@@ -304,11 +350,44 @@ export const IVRDemo: React.FC = () => {
             <Box>
               {/* Current Prompt */}
               <Box sx={{ mb: 3, p: 2, bgcolor: '#fff3e0', borderRadius: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <VolumeUp color="warning" />
-                  <Typography variant="body2" color="textSecondary">
-                    IVR System
-                  </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, justifyContent: 'space-between' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <VolumeUp color="warning" />
+                    <Typography variant="body2" color="textSecondary">
+                      IVR System {isSpeaking && '(Speaking...)'}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    {isSpeaking && (
+                      <Button
+                        size="small"
+                        startIcon={<Stop />}
+                        onClick={stopSpeaking}
+                        variant="outlined"
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Stop
+                      </Button>
+                    )}
+                    {!isSpeaking && (
+                      <Button
+                        size="small"
+                        startIcon={<VolumeUp />}
+                        onClick={() => speakText(ivrScript[currentStep].prompt)}
+                        variant="outlined"
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Repeat
+                      </Button>
+                    )}
+                    <Button
+                      size="small"
+                      startIcon={voiceEnabled ? <VolumeUp /> : <VolumeOff />}
+                      onClick={() => setVoiceEnabled(!voiceEnabled)}
+                      variant="text"
+                      color={voiceEnabled ? 'primary' : 'inherit'}
+                    />
+                  </Box>
                 </Box>
                 <Typography variant="h6">{ivrScript[currentStep].prompt}</Typography>
               </Box>
@@ -416,9 +495,25 @@ export const IVRDemo: React.FC = () => {
                           : '#e8f5e9',
                 }}
               >
-                <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                  Recommended Actions
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="subtitle2" color="textSecondary">
+                    Recommended Actions
+                  </Typography>
+                  <Button
+                    size="small"
+                    startIcon={isSpeaking ? <Stop /> : <VolumeUp />}
+                    onClick={() => {
+                      if (isSpeaking) {
+                        stopSpeaking();
+                      } else {
+                        speakText(triageResult.recommendations.join('. '));
+                      }
+                    }}
+                    variant="text"
+                  >
+                    {isSpeaking ? 'Stop' : 'Listen'}
+                  </Button>
+                </Box>
                 {triageResult.recommendations.map((rec: string, idx: number) => (
                   <Typography key={idx} variant="body2" sx={{ mb: 0.5, pl: 1 }}>
                     {rec}
