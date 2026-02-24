@@ -73,6 +73,7 @@ Most transformative feature: **Patients call a toll-free number and receive real
 **Technical Stack:**
 - **Backend:** TypeScript/Express.js + Node.js
 - **Model:** MedGemma-4b-it (Google HAI-DEF)
+- **Acoustic Analysis:** Google Health HeAR API integration
 - **Voice:** Twilio/Africa's Talking integration
 - **Database:** Firestore (cloud) + SQLite (edge)
 - **Frontend:** React.js (web), React Native (mobile)
@@ -110,6 +111,13 @@ Most transformative feature: **Patients call a toll-free number and receive real
 - Syncs when connectivity returns
 - Rule engine fallback always available
 
+### 6. Acoustic Health Analysis (Google Health HeAR Integration)
+- Analyzes respiratory sounds (cough, breathing) for distress detection
+- Detects wheezing, cough patterns, respiratory difficulty
+- Integrates with voice IVR for audio-based risk assessment
+- Adds another data dimension without requiring patient literacy
+- Ready for integration with Google Health HeAR API
+
 ---
 
 ## Competitive Advantages
@@ -122,6 +130,7 @@ Most transformative feature: **Patients call a toll-free number and receive real
 | **USSD for Feature Phones** | ✅ Yes | ❌ Smartphone-only |
 | **MedGemma (Medical LLM)** | ✅ Yes | ❌ Generic models |
 | **Multi-Channel (4 ways)** | ✅ Yes | ❌ Single channel |
+| **Acoustic Health Analysis** | ✅ Yes (HeAR) | ❌ Not available |
 
 ---
 
