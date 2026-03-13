@@ -524,7 +524,7 @@ table.grantReadWriteData(triageHandler);
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_USERNAME/firstline-triage-platform
+git clone https://github.com/djfuzzygh/firstline-triage-platform
 
 # Install dependencies
 npm install
@@ -570,7 +570,7 @@ The next step is real-world deployment. I'm seeking partnerships with health min
 
 ## Resources
 
-**GitHub Repository:** https://github.com/YOUR_USERNAME/firstline-triage-platform
+**GitHub Repository:** https://github.com/djfuzzygh/firstline-triage-platform
 
 **Live Demo:** [Your CloudFront URL]
 
