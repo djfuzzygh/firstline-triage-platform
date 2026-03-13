@@ -15,6 +15,8 @@ import {
   Alert,
   Chip,
   Grid,
+  Snackbar,
+  AlertTitle,
 } from '@mui/material';
 import {
   Phone,
@@ -25,6 +27,9 @@ import {
   VolumeUp,
   VolumeOff,
   Stop,
+  Cloud,
+  CloudDone,
+  CloudOff,
 } from '@mui/icons-material';
 
 interface IVRStep {
@@ -43,6 +48,13 @@ export const IVRDemo: React.FC = () => {
   const [callDuration, setCallDuration] = useState(0);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Database save state
+  const [encounterId, setEncounterId] = useState<string | null>(null);
+  const [savingEncounter, setSavingEncounter] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationSeverity, setNotificationSeverity] = useState<'success' | 'error' | 'info'>('info');
 
   // Text-to-Speech function
   const speakText = (text: string) => {
@@ -69,6 +81,84 @@ export const IVRDemo: React.FC = () => {
   const stopSpeaking = () => {
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
+  };
+
+  // Save encounter to database
+  const saveEncounterToDatabase = async (result: any, answers: string[]) => {
+    setSavingEncounter(true);
+
+    try {
+      // Map age group to numeric age
+      const ageMap: { [key: string]: number } = {
+        '1': 2,    // Infant
+        '2': 8,    // Child
+        '3': 15,   // Teen
+        '4': 35,   // Adult
+        '5': 70,   // Elderly
+      };
+
+      // Map symptom to full text
+      const symptomMap: { [key: string]: string } = {
+        '1': 'Fever',
+        '2': 'Cough',
+        '3': 'Chest pain',
+        '4': 'Abdominal pain',
+        '5': 'Difficulty breathing',
+      };
+
+      const durationMap: { [key: string]: string } = {
+        '1': 'Less than 24 hours',
+        '2': '1-3 days',
+        '3': '3-7 days',
+        '4': 'More than 1 week',
+      };
+
+      const requestBody = {
+        channel: 'voice',
+        demographics: {
+          age: ageMap[answers[0]] || 35,
+          sex: 'M', // Default - voice doesn't collect gender
+          location: 'Voice Triage',
+        },
+        symptoms: symptomMap[answers[1]] || 'Unknown symptoms',
+        vitals: {}, // Voice doesn't collect vitals
+        offlineCreated: false,
+      };
+
+      console.log('Saving encounter:', requestBody);
+
+      const response = await fetch('/api/encounters', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const id = data.encounterId || data.id || 'unknown';
+      setEncounterId(id);
+      setSavingEncounter(false);
+
+      // Show success notification
+      setNotificationMessage(`✅ Encounter saved to database (ID: ${id.substring(0, 8)}...)`);
+      setNotificationSeverity('success');
+      setNotificationOpen(true);
+
+      console.log('Encounter saved successfully:', id);
+    } catch (error) {
+      console.error('Error saving encounter:', error);
+      setSavingEncounter(false);
+
+      // Show error notification
+      setNotificationMessage(`⚠️ Failed to save encounter: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setNotificationSeverity('error');
+      setNotificationOpen(true);
+    }
   };
 
   // IVR Script
@@ -249,6 +339,9 @@ export const IVRDemo: React.FC = () => {
     setTriageResult(result);
     setProcessing(false);
     setCallDuration(Math.round(callDuration));
+
+    // Save encounter to database (fire-and-forget to not block UI)
+    saveEncounterToDatabase(result, answers);
 
     // Speak the risk tier result after a brief delay
     setTimeout(() => {
@@ -576,8 +669,42 @@ export const IVRDemo: React.FC = () => {
               and performs real triage via MedGemma AI. SMS notifications are sent automatically.
             </Typography>
           </Alert>
+
+          {/* Encounter Save Status */}
+          {triageResult && encounterId && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: '#e8f5e9', borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CloudDone sx={{ color: '#4CAF50' }} />
+              <Box>
+                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                  Encounter Saved
+                </Typography>
+                <Typography variant="caption" display="block">
+                  ID: {encounterId.substring(0, 8)}...
+                </Typography>
+              </Box>
+            </Box>
+          )}
+
+          {/* Saving State */}
+          {savingEncounter && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: '#e3f2fd', borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Cloud sx={{ color: '#2196F3', animation: 'pulse 2s infinite' }} />
+              <Typography variant="caption" color="textSecondary">
+                Saving to database...
+              </Typography>
+            </Box>
+          )}
         </CardContent>
       </Card>
+
+      {/* Notification Snackbar */}
+      <Snackbar
+        open={notificationOpen}
+        autoHideDuration={6000}
+        onClose={() => setNotificationOpen(false)}
+        message={notificationMessage}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Box>
   );
 };

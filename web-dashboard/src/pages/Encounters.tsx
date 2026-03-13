@@ -49,9 +49,18 @@ export default function Encounters() {
   const [searchQuery, setSearchQuery] = useState('');
   const [channelFilter, setChannelFilter] = useState('all');
   const [triageFilter, setTriageFilter] = useState('all');
+  const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
 
   useEffect(() => {
     loadEncounters();
+
+    // Auto-refresh every 30 seconds for more frequent updates on encounters
+    const refreshInterval = setInterval(() => {
+      loadEncounters();
+    }, 30000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(refreshInterval);
   }, []);
 
   const loadEncounters = async () => {
@@ -60,6 +69,7 @@ export default function Encounters() {
       const rows = await encountersApi.list(200);
       setEncounters(rows);
       setError(null);
+      setLastRefreshed(new Date().toLocaleTimeString());
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to load encounters');
     } finally {
@@ -123,8 +133,15 @@ export default function Encounters() {
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">Encounters</Typography>
-        <IconButton onClick={loadEncounters} color="primary">
+        <Box>
+          <Typography variant="h4">Encounters</Typography>
+          {lastRefreshed && (
+            <Typography variant="caption" color="textSecondary">
+              Last refreshed: {lastRefreshed} (Auto-refresh: 30s)
+            </Typography>
+          )}
+        </Box>
+        <IconButton onClick={loadEncounters} color="primary" title="Manual refresh">
           <RefreshIcon />
         </IconButton>
       </Box>

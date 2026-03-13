@@ -38,9 +38,18 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
 
   useEffect(() => {
     loadStats();
+
+    // Auto-refresh every 60 seconds
+    const refreshInterval = setInterval(() => {
+      loadStats();
+    }, 60000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(refreshInterval);
   }, []);
 
   const loadStats = async () => {
@@ -48,6 +57,7 @@ export default function Dashboard() {
       const data = await dashboardApi.getStats();
       setStats(data);
       setError(null);
+      setLastRefreshed(new Date().toLocaleTimeString());
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to load dashboard data');
     } finally {
@@ -83,9 +93,16 @@ export default function Dashboard() {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Dashboard Overview
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h4">
+          Dashboard Overview
+        </Typography>
+        {lastRefreshed && (
+          <Typography variant="caption" color="textSecondary">
+            Last refreshed: {lastRefreshed} (Auto-refresh: 60s)
+          </Typography>
+        )}
+      </Box>
 
       <Grid container spacing={3}>
         {/* Summary Cards */}
